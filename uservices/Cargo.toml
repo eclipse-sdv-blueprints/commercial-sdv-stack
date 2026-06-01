@@ -1,0 +1,53 @@
+#
+# SPDX-FileCopyrightText: Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+[workspace]
+members = [
+    "common",
+    "fms",
+    "powertrain",
+    "vehicle-properties",
+]
+resolver = "2"
+
+[workspace.package]
+readme = "README.md"
+repository = "git@github.com:eclipse-sdv-blueprints/commercial-sdv-stack"
+version = "0.1.0-SNAPSHOT"
+edition = "2024"
+
+[workspace.dependencies]
+async-trait = { version = "0.1.89" }
+backon = { version = "1.6.0", default-features = false, features = ["tokio-sleep"] }
+clap = { version = "4.6.1", default-features = false }
+clap-num = { version = "1.2.0" }
+common = { path = "common" }
+env_logger = { version = "0.11.10", default-features = false, features = [
+    "humantime",
+] }
+log = { version = "0.4.30" }
+protobuf = { version = "3.7.2" }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = { version = "1.0.150" }
+# tokio does not enable features by default
+tokio = { version = "1.52.3" }
+up-rust = { version = "0.9", default-features = false }
+up-transport-mqtt5 = { version = "0.4" }
+up-transport-zenoh = { version = "0.9" }
+
+[profile.release]
+lto = true          # Link time optimization (dead code removal etc...)
+opt-level = "s"
+codegen-units = 1
+incremental = false
+strip = true

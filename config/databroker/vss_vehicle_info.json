@@ -1,0 +1,362 @@
+{
+    "Vehicle": {
+        "type": "branch",
+        "description": "High-level vehicle data.",
+        "children": {
+            "VehicleIdentification": {
+                "type": "branch",
+                "description": "Attributes that identify a vehicle.",
+                "children": {
+                    "VIN": {
+                        "type": "attribute",
+                        "datatype": "string",
+                        "description": "17-character Vehicle Identification Number (VIN) as defined by ISO 3779.",
+                        "comment": "VIN is unique for each vehicle and legally required in many jurisdictions.",
+                        "default": "YV2A4B2B5PA123456"
+                    },
+                    "Brand": {
+                        "type": "attribute",
+                        "datatype": "string",
+                        "description": "Vehicle brand or manufacturer.",
+                        "comment": "Luxury brands may be part of a larger manufacturer group.",
+                        "default": "Volvo"
+                    },
+                    "Model": {
+                        "type": "attribute",
+                        "datatype": "string",
+                        "description": "Vehicle model.",
+                        "comment": "Model designation varies by brand and market.",
+                        "default": "FH16"
+                    },
+                    "Year": {
+                        "type": "attribute",
+                        "datatype": "uint16",
+                        "description": "Model year of the vehicle.",
+                        "comment": "Often but not always the same as the year of manufacture.",
+                        "min": 1900,
+                        "max": 2100,
+                        "default": 2023
+                    },
+                    "AcrissCode": {
+                        "type": "attribute",
+                        "datatype": "string",
+                        "description": "The ACRISS Car Classification Code is a code used by many car rental companies.",
+                        "comment": "ACRISS defines accessibility, gearbox, fuel, air conditioning, and vehicle type.",
+                        "default": ""
+                    },
+                    "BodyType": {
+                        "type": "attribute",
+                        "datatype": "string",
+                        "description": "Body type of the vehicle.",
+                        "allowed": [
+                            "sedan",
+                            "hatchback",
+                            "station_wagon",
+                            "coupe",
+                            "cabriolet",
+                            "pickup",
+                            "suv",
+                            "mpv",
+                            "other"
+                        ],
+                        "default": "other"
+                    },
+                    "DateVehicleFirstRegistered": {
+                        "type": "attribute",
+                        "datatype": "string",
+                        "description": "The date in ISO 8601 format of the first registration of the vehicle with the respective public authorities.",
+                        "comment": "This data is also available from Vehicle.VehicleIdentification.PurchaseDate.",
+                        "default": "2024-01-15"
+                    },
+                    "MeetsEmissionStandard": {
+                        "type": "attribute",
+                        "datatype": "string",
+                        "description": "Indicates which emission standard the vehicle meets.",
+                        "comment": "Tailpipe emission standard the vehicle complies to.",
+                        "default": ""
+                    },
+                    "ProductionDate": {
+                        "type": "attribute",
+                        "datatype": "string",
+                        "description": "The production date of the vehicle in ISO 8601 format.",
+                        "comment": "This is the date when the vehicle left the production line.",
+                        "default": "2023-12-01"
+                    },
+                    "PurchaseDate": {
+                        "type": "attribute",
+                        "datatype": "string",
+                        "description": "The purchase date of the vehicle in ISO 8601 format.",
+                        "comment": "This is the date when the current owner purchased the vehicle.",
+                        "default": "2024-01-01"
+                    },
+                    "VehicleModelDate": {
+                        "type": "attribute",
+                        "datatype": "string",
+                        "description": "The release date of the vehicle model in ISO 8601 format.",
+                        "comment": "This is when the model was first introduced by the manufacturer.",
+                        "default": "2023-01-01"
+                    },
+                    "VehicleConfiguration": {
+                        "type": "attribute",
+                        "datatype": "string",
+                        "description": "Vehicle configuration designation.",
+                        "comment": "Indicates the vehicle configuration, e.g. engine, gearbox, trim level.",
+                        "default": ""
+                    },
+                    "VehicleSeatingCapacity": {
+                        "type": "attribute",
+                        "datatype": "uint8",
+                        "description": "Number of seats in the vehicle.",
+                        "min": 1,
+                        "max": 50,
+                        "default": 2
+                    },
+                    "VehicleSpecialUsage": {
+                        "type": "attribute",
+                        "datatype": "string",
+                        "description": "Indicates if the vehicle is used for special purposes.",
+                        "comment": "Examples: police, ambulance, fire truck, etc.",
+                        "default": ""
+                    },
+                    "VehicleInteriorColor": {
+                        "type": "attribute",
+                        "datatype": "string",
+                        "description": "A color name for the vehicle interior.",
+                        "default": ""
+                    },
+                    "VehicleInteriorType": {
+                        "type": "attribute",
+                        "datatype": "string",
+                        "description": "The type or material of the vehicle interior.",
+                        "comment": "Examples: leather, fabric, etc.",
+                        "default": ""
+                    },
+                    "KnownVehicleDamages": {
+                        "type": "attribute",
+                        "datatype": "string",
+                        "description": "A textual description of known damages to the vehicle.",
+                        "default": ""
+                    }
+                }
+            },
+            "Powertrain": {
+                "type": "branch",
+                "description": "Powertrain data for battery management, etc.",
+                "children": {
+                    "Type": {
+                        "type": "attribute",
+                        "datatype": "string",
+                        "description": "Type of powertrain in the vehicle.",
+                        "allowed": [
+                            "COMBUSTION",
+                            "HYBRID",
+                            "ELECTRIC"
+                        ],
+                        "default": "COMBUSTION"
+                    },
+                    "SupportedModes": {
+                        "type": "attribute",
+                        "datatype": "string[]",
+                        "description": "Supported powertrain modes in the vehicle.",
+                        "allowed": [
+                            "PERFORMANCE",
+                            "ECONOMY",
+                            "EV_ONLY",
+                            "FORCED_CHARGING"
+                        ],
+                        "default": [ "PERFORMANCE", "ECONOMY" ]
+                    },
+                    "FuelSystem": {
+                        "type": "branch",
+                        "description": "Fuel system data.",
+                        "children": {
+                            "SupportedFuelTypes": {
+                                "type": "attribute",
+                                "datatype": "string[]",
+                                "description": "High level information of fuel types supported by the vehicle.",
+                                "comment": "If a vehicle also has an electric drivetrain (e.g. hybrid) that will be obvious from the powertrain type.",
+                                "allowed": [
+                                    "GASOHLINE",
+                                    "DIESEL",
+                                    "E85",
+                                    "LPG",
+                                    "CNG",
+                                    "LNG",
+                                    "H2",
+                                    "OTHER"
+                                ],
+                                "default": [ "DIESEL" ]
+                            },
+                            "SupportedFuel": {
+                                "type": "attribute",
+                                "datatype": "string[]",
+                                "description": "Detailed information on fuels supported by the vehicle.",
+                                "comment": "Identifiers originating from DIN EN 16942:2021-08, appendix B, with additional suffix for octane (RON) where relevant.",
+                                "default": [ "B7" ]
+                            },
+                            "HybridType": {
+                                "type": "attribute",
+                                "datatype": "string",
+                                "description": "Defines the hybrid type of the vehicle.",
+                                "allowed": [
+                                    "UNKNOWN",
+                                    "NOT_APPLICABLE",
+                                    "STOP_START",
+                                    "BELT_ISG",
+                                    "CIMG",
+                                    "PHEV"
+                                ],
+                                "default": "NOT_APPLICABLE"
+                            },
+                            "TankCapacity": {
+                                "type": "attribute",
+                                "datatype": "float",
+                                "description": "Capacity of the fuel tank in liters.",
+                                "unit": "l",
+                                "min": 0,
+                                "default": 500.0
+                            }
+                        }
+                    },
+                    "ElectricMotor": {
+                        "type": "branch",
+                        "description": "Electric motor specific data.",
+                        "children": {
+                            "EngineCode": {
+                                "type": "attribute",
+                                "datatype": "string",
+                                "description": "Engine code designation, as specified by vehicle manufacturer.",
+                                "default": ""
+                            },
+                            "MaxPower": {
+                                "type": "attribute",
+                                "datatype": "uint16",
+                                "description": "Peak power, in kilowatts, that motor(s) can generate.",
+                                "unit": "kW",
+                                "default": 0
+                            },
+                            "MaxTorque": {
+                                "type": "attribute",
+                                "datatype": "uint16",
+                                "description": "Peak torque, in newton meter, that the motor(s) can generate.",
+                                "unit": "Nm",
+                                "default": 0
+                            }
+                        }
+                    },
+                    "CombustionEngine": {
+                        "type": "branch",
+                        "description": "Engine-specific data, stopping at the engine block.",
+                        "children": {
+                            "EngineCode": {
+                                "type": "attribute",
+                                "datatype": "string",
+                                "description": "Engine code designation, as specified by vehicle manufacturer.",
+                                "default": "D13K540"
+                            },
+                            "Displacement": {
+                                "type": "attribute",
+                                "datatype": "uint16",
+                                "description": "Displacement in cubic centimeters.",
+                                "unit": "cm3",
+                                "default": 12777
+                            },
+                            "StrokeLength": {
+                                "type": "attribute",
+                                "datatype": "float",
+                                "unit": "mm",
+                                "description": "Stroke length of the engine.",
+                                "default": 158.0
+                            },
+                            "Bore": {
+                                "type": "attribute",
+                                "datatype": "float",
+                                "unit": "mm",
+                                "description": "Bore of the engine.",
+                                "default": 131.0
+                            },
+                            "Configuration": {
+                                "type": "attribute",
+                                "datatype": "string",
+                                "description": "Engine configuration.",
+                                "allowed": [
+                                    "UNKNOWN",
+                                    "STRAIGHT",
+                                    "V",
+                                    "BOXER",
+                                    "W",
+                                    "ROTARY",
+                                    "RADIAL",
+                                    "SQUARE",
+                                    "H",
+                                    "U",
+                                    "OPPOSED",
+                                    "X"
+                                ],
+                                "default": "STRAIGHT"
+                            },
+                            "NumberOfCylinders": {
+                                "type": "attribute",
+                                "datatype": "uint16",
+                                "description": "Number of cylinders in the engine.",
+                                "default": 6
+                            },
+                            "NumberOfValvesPerCylinder": {
+                                "type": "attribute",
+                                "datatype": "uint16",
+                                "description": "Number of valves per cylinder.",
+                                "default": 4
+                            },
+                            "CompressionRatio": {
+                                "type": "attribute",
+                                "datatype": "string",
+                                "description": "Engine compression ratio, specified in the format 'X:1', e.g. '9.2:1'.",
+                                "default": "17.0:1"
+                            },
+                            "EngineOilCapacity": {
+                                "type": "attribute",
+                                "datatype": "float",
+                                "description": "Engine oil capacity in liters.",
+                                "unit": "l",
+                                "default": 60.0
+                            },
+                            "EngineCoolantCapacity": {
+                                "type": "attribute",
+                                "datatype": "float",
+                                "description": "Engine coolant capacity in liters.",
+                                "unit": "l",
+                                "default": 42.0
+                            },
+                            "MaxPower": {
+                                "type": "attribute",
+                                "datatype": "uint16",
+                                "description": "Peak power, in kilowatts, that engine can generate.",
+                                "unit": "kW",
+                                "default": 397
+                            },
+                            "MaxTorque": {
+                                "type": "attribute",
+                                "datatype": "uint16",
+                                "description": "Peak torque, in newton meter, that the engine can generate.",
+                                "unit": "Nm",
+                                "default": 2600
+                            },
+                            "AspirationType": {
+                                "type": "attribute",
+                                "datatype": "string",
+                                "description": "Type of aspiration (naturally aspirated, turbo, etc.).",
+                                "allowed": [
+                                    "UNKNOWN",
+                                    "NATURAL",
+                                    "SUPERCHARGER",
+                                    "TURBOCHARGER"
+                                ],
+                                "default": "TURBOCHARGER"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

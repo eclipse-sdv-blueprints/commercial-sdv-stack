@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+# 
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+
+name: Lint source code
+
+on:
+  push:
+    branches:
+    - main
+  pull_request:
+    branches:
+    - main
+
+env:
+  RUST_TOOLCHAIN: ${{ vars.RUST_TOOLCHAIN || 'stable' }}
+  RUSTFLAGS: -Dwarnings
+  CARGO_TERM_COLOR: always
+
+jobs:
+  lint-source-code:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    - name: Lint shell scripts
+      uses: bewuethr/shellcheck-action@80bac2daa9fcf95d648200a793d00060857e6dc4 # v2.3.0
+    - uses: actions-rust-lang/setup-rust-toolchain@46268bd060767258de96ed93c1251119784f2ab6 # v1.16.1
+      with:
+        toolchain: ${{ env.RUST_TOOLCHAIN }}
+        components: clippy
+    - name: Lint Rust code
+      run: |-
+        cargo fmt --manifest-path uservices/Cargo.toml --all --check
+        cargo clippy --manifest-path uservices/Cargo.toml --workspace --all-features -- -Dwarnings

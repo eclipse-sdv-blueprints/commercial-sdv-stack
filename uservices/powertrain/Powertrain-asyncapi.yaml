@@ -1,0 +1,156 @@
+#
+# SPDX-FileCopyrightText: Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+asyncapi: '3.0.0'
+id: urn:covesa:org:uservices:powertrain.mode-control
+info:
+  title: COVESA uService for Powertrain Mode control
+  version: '1.0.0'
+  description: |
+    A service for setting a vehicle's powertrain mode of operation.
+  contact:
+    name: Kai Hudalla
+    email: kai.hudalla@etas.com
+  license:
+    name: MIT
+    url: https://opensource.org/license/mit/
+  tags:
+    - name: COVESA uServices
+  x-uprotocol:
+    serviceName: powertrain.mode-control
+    serviceId: 0x0301
+
+defaultContentType: "application/json"
+
+channels:
+  getCurrentModeRequests:
+    summary: Queries for the current mode of operation.
+    messages:
+      json:
+        contentType: "application/json"
+        payload:
+          $ref: "#/components/messages/getCurrentModeRequest"
+
+  getCurrentModeResponses:
+    summary: The current mode of operation.
+    messages:
+      json:
+        contentType: "application/json"
+        payload:
+          $ref: "#/components/messages/getCurrentModeResponse"
+
+  setCurrentModeRequests:
+    summary: Set new mode of operation.
+    messages:
+      json:
+        contentType: "application/json"
+        payload:
+          $ref: "#/components/messages/setCurrentModeRequest"
+
+  setCurrentModeResponses:
+    summary: Outcomes of requests to set new mode of operation.
+    messages:
+      json:
+        contentType: "application/json"
+        payload:
+          $ref: "#/components/messages/setCurrentModeResponse"
+
+operations:
+  GetCurrentMode:
+    title: Get current powertrain mode
+    summary: Get the current mode of operation for the powertrain.
+    description: A longer description
+    channel:
+      $ref: "#/channels/getCurrentModeRequests"
+    action: receive
+    reply:
+      channel:
+        $ref: "#/channels/getCurrentModeResponses"
+    bindings:
+      x-uprotocol:
+        methodId: 0x0001
+
+  SetCurrentMode:
+    title: Set current powertrain mode
+    summary: Set the current mode of operation for the powertrain.
+    description: A longer description
+    channel:
+      $ref: "#/channels/setCurrentModeRequests"
+    action: receive
+    reply:
+      channel:
+        $ref: "#/channels/setCurrentModeResponses"
+    bindings:
+      x-uprotocol:
+        methodId: 0x0002
+
+components:
+  schemas:
+    Empty:
+      title: An empty object
+      type: object
+      properties: {}
+      additionalProperties: false
+    PowertrainMode:
+      type: string
+      description: The mode of operation for the powertrain.
+      enum:
+        - "PERFORMANCE"
+        - "ECONOMY"
+        - "EV-ONLY"
+        - "FORCED-CHARGING"
+  messages:
+    getCurrentModeRequest:
+      name: GetCurrentModeRequest
+      title: Get Current Powertrain Mode Request
+      summary: A request to get the current powertrain mode.
+      payload:
+        $ref: "#/components/schemas/Empty"
+        description: An empty object as no parameters are needed for this request.
+    getCurrentModeResponse:
+      name: GetCurrentModeResponse
+      title: Get Current Powertrain Mode Response
+      summary: A response containing the current powertrain mode.
+      payload:
+        description: The current powertrain mode.
+        type: object
+        properties:
+          mode:
+            $ref: "#/components/schemas/PowertrainMode"
+            description: The current mode of operation for the powertrain.
+      examples:
+        - name: get current mode
+          payload:
+            mode: "economy"
+    setCurrentModeRequest:
+      name: SetCurrentModeRequest
+      title: Set Current Powertrain Mode Request
+      summary: A request to set the current powertrain mode.
+      payload:
+        description: The desired powertrain mode.
+        type: object
+        properties:
+          mode:
+            $ref: "#/components/schemas/PowertrainMode"
+            description: The desired mode of operation for the powertrain.
+      examples:
+        - name: set current mode to "performance"
+          payload:
+            mode: "performance"
+    setCurrentModeResponse:
+      name: SetCurrentModeResponse
+      title: Set Current Powertrain Mode Response
+      summary: A response indicating the outcome of a request to set the current powertrain mode.
+      payload:
+        $ref: "#/components/schemas/Empty"
+        description: An empty object as no additional information needs to be returned to the caller.

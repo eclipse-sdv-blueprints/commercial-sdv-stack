@@ -1,0 +1,216 @@
+#
+# SPDX-FileCopyrightText: Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+networks:
+  backend:
+    driver: bridge
+    attachable: true
+  vehicle-uprotocol:
+    driver: bridge
+    attachable: true
+  vehicle-sovd:
+    driver: bridge
+    attachable: true
+
+volumes:
+  mosquitto-data:
+  mosquitto-logs:
+
+services:
+  dozzle: # https://dozzle.dev/guide/what-is-dozzle
+    image: amir20/dozzle:latest
+    volumes:
+      - type: bind
+        source: /var/run/docker.sock
+        target: /var/run/docker.sock
+        read_only: true
+    ports:
+      - "127.0.0.1:8080:8080"
+
+  # BACKEND SERVICES
+
+  symphony-api:
+    image: ghcr.io/eclipse-symphony/symphony-api:0.48.48
+    networks:
+      - backend
+    ports:
+      - "127.0.0.1:8082:8082"
+    environment:
+      - USE_SERVICE_ACCOUNT_TOKENS=false
+      - SYMPHONY_API_URL=http://localhost:8082/v1alpha2/
+      - CONFIG=/symphony-api-no-k8s.json
+      - LOG_LEVEL=Error
+    restart: unless-stopped
+  symphony-portal:
+    image: ghcr.io/eclipse-symphony/symphony-portal:0.48-proxy.40
+    networks:
+      - backend
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      - SYMPHONY_API=http://symphony-api:8082/v1alpha2/
+      - NEXTAUTH_SECRET=SymphonyKey
+      - NEXTAUTH_URL=http://localhost:3000
+    restart: unless-stopped
+    depends_on:
+      - symphony-api
+  mosquitto:
+    image: eclipse-mosquitto:2
+    networks:
+      - backend
+      - vehicle-uprotocol
+    ports:
+      - "127.0.0.1:1883:1883"
+    volumes:
+      - ./config/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mosquitto-data:/mosquitto/data
+      - mosquitto-logs:/mosquitto/log
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mosquitto_sub -h localhost -p 1883 -i healthcheck -t '$$SYS/#' -C 1 -W 3 >/dev/null 2>&1 || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+  fms:
+    image: ghcr.io/eclipse-sdv-blueprints/commercial-sdv-stack/fms:latest
+    build:
+      context: ./uservices
+      dockerfile: ./fms/Dockerfile
+    networks:
+      - backend
+    environment:
+      - RUST_LOG=info,fms=debug
+      - MQTT_BROKER_URI=mqtt://mosquitto:1883
+      - MQTT_CLIENT_ID=fleet-management-system
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+    command: ["mqtt5"]
+
+  # IN-VEHICLE SERVICES
+
+  symphony-agent:
+    image: ghcr.io/eclipse-symphony/symphony-api:0.48.48
+    networks:
+      - vehicle-uprotocol
+    volumes:
+      - ./config/symphony/symphony-agent.json:/symphony-agent.json:ro
+    environment:
+      - CONFIG=/symphony-agent.json
+      - LOG_LEVEL=info
+      - RUST_LOG=INFO,uprotocol=INFO
+    restart: unless-stopped
+  ecu-updater:
+    image: ghcr.io/eclipse-uprotocol/symphony-target-example-rust/ecu-updater:0.1.0
+    build: https://github.com/eclipse-uprotocol/symphony-target-example-rust.git
+    command: ["mqtt5"]
+    networks:
+      - vehicle-uprotocol
+    environment:
+      - UP_AUTHORITY=ecu-updater
+      - UP_ENTITY_ID=0x0001A100
+      - MQTT_BROKER_URI=mqtt://mosquitto:1883
+      - MQTT_CLIENT_ID=ecu-updater
+      - RUST_LOG=info,up_rust::symphony=debug
+    depends_on:
+      - mosquitto
+  databroker:
+    image: "ghcr.io/eclipse-kuksa/kuksa-databroker:0.6.1"
+    networks:
+      - vehicle-uprotocol
+    ports:
+      - "127.0.0.1:55555:55555"
+    volumes:
+      - "./config/databroker/vss_vehicle_info.json:/vss_vehicle_info.json:ro"
+    environment:
+      KUKSA_DATABROKER_ADDR: "0.0.0.0"
+      KUKSA_DATABROKER_PORT: "55555"
+      KUKSA_DATABROKER_METADATA_FILE: "/vss_vehicle_info.json"
+      RUST_LOG: "info"
+    # for the time being, we do not use TLS secured connections to Databroker
+    command: "--insecure"
+  vehicle-properties:
+    image: ghcr.io/eclipse-sdv-blueprints/commercial-sdv-stack/vehicle-properties:latest
+    build:
+      context: ./uservices
+      dockerfile: ./vehicle-properties/Dockerfile
+    networks:
+      - vehicle-uprotocol
+    environment:
+      - DATABROKER_URI=http://databroker:55555
+      - RUST_LOG=info,vehicle_properties=info
+      - MQTT_BROKER_URI=mqtt://mosquitto:1883
+      - MQTT_CLIENT_ID=vehicle-properties
+    depends_on:
+      - databroker
+      - mosquitto
+    command: ["mqtt5"]
+  powertrain-mode-controller:
+    image: ghcr.io/eclipse-sdv-blueprints/commercial-sdv-stack/powertrain-mode-controller:latest
+    build:
+      context: ./uservices
+      dockerfile: ./powertrain/Dockerfile
+    networks:
+      - vehicle-uprotocol
+      - vehicle-sovd
+    environment:
+      - RUST_LOG=info,powertrain=info
+      - MQTT_BROKER_URI=mqtt://mosquitto:1883
+      - MQTT_CLIENT_ID=powertrain-mode-controller
+      - SOVD_SERVER_BASE_URI=http://sovd-cda:20002/vehicle/v15/
+      - SOVD_POWERTRAIN_MODE_RESOURCE_PATH=components/blueprint-ecu/data/powertrain_mode
+      - SOVD_ACCESS_TOKEN=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0IiwiZXhwIjoyMDAwMDAwMDAwfQ.Q0IP5df7FxVEvVDF2v6soF8uh-j_qA-D_tgYTb3ur3g
+    depends_on:
+      mosquitto:
+        condition: service_healthy
+      sovd-cda:
+        condition: service_started
+    command: ["mqtt5"]
+  sovd-cda:
+    image: ghcr.io/eclipse-sdv-blueprints/commercial-sdv-stack/sovd-cda:latest
+    build:
+      context: https://github.com/eclipse-opensovd/classic-diagnostic-adapter.git
+      dockerfile: ./testcontainer/cda/Dockerfile
+    ports:
+      - "${CDA_PORT:-20002}:20002"
+    volumes:
+      - ./config/cda:/app/odx:ro
+    networks:
+      - vehicle-sovd
+    depends_on:
+      ecu-sim:
+        condition: service_healthy
+    environment:
+      - RUST_LOG=info
+    command: ["-d", "/app/odx"]
+    restart: unless-stopped
+  ecu-sim:
+    image: ghcr.io/eclipse-sdv-blueprints/commercial-sdv-stack/ecu-sim:latest
+    build:
+      context: ./ecu-sim
+      dockerfile: docker/Dockerfile
+    ports:
+      - "${SIM_CONTROL_PORT:-8181}:8181"
+    networks:
+      - vehicle-sovd
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8181/ || exit 1"]
+      interval: 1s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped

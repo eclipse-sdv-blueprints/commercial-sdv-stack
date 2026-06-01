@@ -1,0 +1,25 @@
+{
+  "name": "Commercial SDV Stack",
+  "version": "0.1.0",
+  "description": "A showcase for common use cases in commercial vehicle fleets.",
+  "participatingProjects": [
+    {
+      "id": "automotive.kuksa"
+    },
+    {
+      "id": "automotive.opensovd"
+    },
+    {
+      "id": "automotive.uprotocol"
+    },
+    {
+      "id": "iot.paho"
+    },
+    {
+      "id": "iot.symphony"
+    },
+    {
+      "id": "iot.zenoh"
+    }
+  ]
+}

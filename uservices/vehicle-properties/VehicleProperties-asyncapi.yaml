@@ -1,0 +1,78 @@
+#
+# SPDX-FileCopyrightText: Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+asyncapi: '3.0.0'
+id: urn:covesa:org:uservices:vehicle.properties
+info:
+  title: COVESA uService for Vehicle Properties
+  version: '1.0.0'
+  description: |
+    A service for reporting various properties of a vehicle. A vehicle may use this service to expose static information about itself, such as its VIN, make, model, and year of manufacture. But also more technical details such as engine type, number of cylinders, displacement, fuel type, etc.
+  contact:
+    name: Kai Hudalla
+    email: kai.hudalla@etas.com
+  license:
+    name: MIT
+    url: https://opensource.org/license/mit/
+  tags:
+    - name: COVESA uServices
+  x-uprotocol:
+    serviceName: vehicle.properties
+    serviceId: 0x0302
+
+defaultContentType: "application/json"
+
+channels:
+  vehicleProperties:
+    summary: Current vehicle property values.
+    messages:
+      json:
+        contentType: "application/json"
+        payload:
+          $ref: "#/components/messages/vehicleProperties"
+
+operations:
+  publishProperties:
+    title: Publish properties.
+    summary: Publishes the current vehicle property values as an event.
+    channel:
+      $ref: "#/channels/vehicleProperties"
+    action: send
+    bindings:
+      x-uprotocol:
+        topicId: 0x8000
+
+components:
+  messages:
+    vehicleProperties:
+      name: VehicleProperties
+      title: Vehicle Properties
+      summary: A message containing various properties of the vehicle.
+      payload:
+        type: object
+        description: A collection of vehicle properties in the form of VSS data points.
+      examples:
+        - name: example vehicle properties
+          payload:
+            Vehicle.Powertrain.SupportedModes:
+              - "PERFORMANCE"
+              - "ECONOMY"
+              - "EV_ONLY"
+              - "FORCED_CHARGING"
+            Vehicle.Powertrain.Type: "COMBUSTION"
+            Vehicle.Powertrain.FuelSystem.SupportedFuelTypes:
+              - "DIESEL"
+            Vehicle.VehicleIdentification.VIN: "YV2A4B2B5PA123456"
+            Vehicle.VehicleIdentification.Brand: "Volvo"
+            Vehicle.VehicleIdentification.Model: "FH16"
+            Vehicle.VehicleIdentification.ProductionDate: "2023-12-01"
