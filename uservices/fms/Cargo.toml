@@ -1,0 +1,40 @@
+#
+# SPDX-FileCopyrightText: Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+[package]
+name = "fms"
+version = { workspace = true }
+edition = { workspace = true }
+
+[dependencies]
+async-trait = { workspace = true }
+backon = { workspace = true }
+clap = { workspace = true, default-features = false, features = [
+    "std",
+    "derive",
+    "env",
+    "color",
+    "help",
+    "usage",
+    "error-context",
+    "suggestions",
+] }
+common = { workspace = true }
+env_logger = { workspace = true }
+log = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true, features = ["signal"] }
+up-rust = { workspace = true, default-features = false, features = ["communication"] }
+up-transport-mqtt5 = { workspace = true }
+up-transport-zenoh = { workspace = true }

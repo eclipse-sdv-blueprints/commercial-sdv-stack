@@ -1,0 +1,99 @@
+{
+    "siteInfo": {
+        "siteId": "my-agent",
+        "currentSite": {
+            "baseUrl": "",
+            "username": "",
+            "password": ""
+        }
+    },
+    "api": {
+        "pubsub": {
+            "shared": true,
+            "provider": {
+                "type": "providers.pubsub.memory",
+                "config": { }
+            }
+        },
+        "keylock": {
+            "shared": true,
+            "provider": {
+                "type": "providers.keylock.memory",
+                "config": {
+                    "mode": "Global",
+                    "cleanInterval": 30,
+                    "purgeDuration": 43200
+                }
+            }
+        },
+        "vendors": [
+            {
+                "type": "vendors.echo",
+                "route": "greetings",
+                "managers": [ ]
+            },
+            {
+                "type": "vendors.solution",
+                "loopInterval": 15,
+                "route": "solution",
+                "managers": [
+                    {
+                        "name": "solution-manager",
+                        "type": "managers.symphony.solution",
+                        "properties": {
+                            "providers.persistentstate": "mem-state",
+                            "providers.config": "mock-config",
+                            "providers.secret": "mock-secret",
+                            "providers.keylock": "mem-keylock",
+                            "isTarget": "true",
+                            "targetNames": "ecu-updater-target",
+                            "poll.enabled": "true"
+                        },
+                        "providers": {
+                            "mem-state": {
+                                "type": "providers.state.memory",
+                                "config": { }
+                            },
+                            "mem-keylock": {
+                                "type": "providers.keylock.memory",
+                                "config": {
+                                    "mode": "Shared"
+                                }
+                            },
+                            "mock-config": {
+                                "type": "providers.config.mock",
+                                "config": { }
+                            },
+                            "mock-secret": {
+                                "type": "providers.secret.mock",
+                                "config": { }
+                            },
+                            "ecu-updater": {
+                                "type": "providers.target.rust",
+                                "config": {
+                                    "name": "ecu-updater-type",
+                                    "libFile": "/extensions/libuprotocol.so",
+                                    "libHash": "any",
+                                    "localEntity": "up://symphony-agent/DA00/1/0",
+                                    "getMethodUri": "up://ecu-updater/1A100/1/1",
+                                    "brokerAddress": "mqtt://mosquitto:1883"
+                                }
+                            }
+                        }
+                    }
+                ]
+            }
+        ]
+    },
+    "bindings": [
+        {
+            "type": "bindings.mqtt",
+            "config": {
+                "brokerAddress": "tcp://mosquitto:1883",
+                "clientID": "my-agent",
+                "requestTopic": "coa-request",
+                "responseTopic": "coa-response"
+            }
+        }
+    ]
+}

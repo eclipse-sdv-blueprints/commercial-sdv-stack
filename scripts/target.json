@@ -1,0 +1,50 @@
+{
+  "metadata": {
+    "name": "ecu-updater-target"
+  },
+  "spec": {
+    "displayName": "Vehicle_ECUs",
+    "forceRedeploy": true,
+    "components": [
+      {
+        "name": "Engine Controller",
+        "metadata": {
+          "manufacturer": "ACME Inc.",
+          "model": "EC-14"
+        },
+        "type": "ecu-updater",
+        "properties": {
+          "fw-image": "https://acme.io/fw/engine-control-1.45.img"
+        }
+      },
+      {
+        "name": "Telematics Unit",
+        "type": "ecu-updater",
+        "properties": {
+          "fw-image": "https://non-existent.io/fw/telematics-unit-2.0.img"
+        },
+        "parameters": {
+          "back-end-url": "https://non-existent.io/telematics"
+        }
+      }
+    ],
+    "topologies": [
+      {
+        "bindings": [
+          {
+            "role": "ecu-updater",
+            "provider": "providers.target.mqtt",
+            "config": {
+              "name": "proxy",
+              "brokerAddress": "tcp://mosquitto:1883",
+              "clientID": "symphony",
+              "requestTopic": "coa-request",
+              "responseTopic": "coa-response",
+              "timeoutSeconds": "30"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
