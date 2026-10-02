@@ -29,24 +29,26 @@ pub(crate) struct Cli {
     #[arg(
         long,
         value_name = "URI",
-        env = "LOCAL_ADDRESS",
-        default_value = "up://fms/3AA/1/0",
+        env = "UP_LOCAL_ADDRESS",
+        default_value = "up://backend/103AA/1/0",
         value_parser = up_rust::UUri::from_str,
     )]
     local_address: UUri,
+    /// The filter URI to use for subscribing to the vehicle properties topic.
     #[arg(
         long,
         value_name = "URI",
-        env = "VEHICLE_PROPERTIES_TOPIC",
-        default_value = "up://vehicle-properties/302/1/8000",
+        env = "VEHICLE_PROPERTIES_TOPIC_FILTER",
+        default_value = "up://vehicle/FFFF0302/1/8000",
         value_parser = up_rust::UUri::from_str,
     )]
-    vehicle_properties_topic: UUri,
+    vehicle_properties_topic_filter: UUri,
+    /// The method URI to use for setting the current mode on the powertrain.
     #[arg(
         long,
         value_name = "URI",
         env = "POWERTRAIN_SET_CURRENT_MODE_METHOD",
-        default_value = "up://powertrain-mode-controller/301/1/2",
+        default_value = "up://vehicle/10301/1/2",
         value_parser = up_rust::UUri::from_str,
     )]
     powertrain_set_current_mode_method: UUri,
@@ -77,7 +79,7 @@ impl Cli {
     }
 
     pub(crate) fn get_vehicle_properties_topic(&self) -> &UUri {
-        &self.vehicle_properties_topic
+        &self.vehicle_properties_topic_filter
     }
 
     pub(crate) async fn get_transport(

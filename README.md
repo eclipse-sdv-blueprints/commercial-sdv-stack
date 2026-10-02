@@ -16,16 +16,38 @@ The following diagram provides an overview of the components used for the exampl
 ## Getting Started
 
 The repository contains a [Docker Compose file](docker-compose.yaml) which can be used to start up all
-components implementing the example use cases:
+components implementing the example use cases. To get started, run the following command
 
 ```bash
 # Using the default Docker Compose file in the top level folder:
-docker compose up -d
+docker compose --profile infra up -d
 # Or if your docker-compose.yaml file is located in a different folder:
 # docker compose -f /path/to/your/docker-compose.yml up -d
 ```
 
-Now you can open Dozzle in your browser at http://localhost:8080 and verify that all components are up and running and inspect their log output.
+This will start up some common infrastructure components, which are shared by all needed for all cases.
+You can now open _Dozzle_ in your browser at http://localhost:8080 and see the running infrastructure containers and inspect their log output.
+
+## Configure Authorization
+
+Some of the service components that implement the use cases in this blueprint use JSON Web Tokens (JWT) to authenticate and authorize clients. The tokens are issued by [Spire](https://spiffe.io) agents running in the backend and on the vehicle. These agents are connected to a Spire server in the backend which provides the key material need for creating and verifying the tokens. The workload components then use the agent's _SPIFFE Workload API_ to create and/or validate tokens. For this to work, the workloads need to be registered with the Spire server by running the following script:
+
+```bash
+scripts/register_workloads.sh
+```
+
+After successful workload registration, the use cases can be run as described in the following sections.
+
+## Run the Deploy Firmware Use Case
+
+Start the required components and services by running:
+
+```bash
+# Using the default Docker Compose file in the top level folder:
+docker compose --profile infra --profile fw-update up -d
+```
+
+In the Dozzle console you should now see a few additional containers running.
 
 ### Verify Access to Services
 
@@ -35,7 +57,7 @@ Now you can open Dozzle in your browser at http://localhost:8080 and verify that
   Login with user `admin` without a password. You should see the Symphony portal page.
   During your experiments, the portal can used to determine the progress of updates by means of checking the _Targets_.
 
-## Run the Deploy Firmware Use Case
+### Trigger Firmware Update
 
 Now that the infrastructure is up and running, it is time to trigger the update of some ECU firmware images using the Symphony API:
 
@@ -120,16 +142,23 @@ sequenceDiagram
 
 **Note** The ECU Updater in this example use case does not actually deploy any firmware images to any ECU but only maintains some state in memory. In a future extension of the blueprint, the OpenSOVD CDA server might be used to actually perform an ECU update via UDS.
 
-## Run the Update ECU Configuration Use Case
+## Run the Set Powertrain Mode Use Case
 
 In this use case, a Fleet Management System in the backend uses the _Powertrain Mode Controller_ uService on the vehicle to cycle the vehicle's powertrain through all supported modes.
 
-For this purpose, the Powertrain Mode Controller invokes the Powertrain ECU's _PowerTrain_Mode_Write_ UDS operation by means of [Eclipse OpenSOVD's Classic Diagnostic Adapter](https://github.com/eclipse-opensovd/classic-diagnostic-adapter) (CDA) component.
+For this purpose, the Powertrain Mode Controller invokes the Powertrain ECU's _PowerTrain_Mode_Write_ UDS operation by means of the [Eclipse OpenSOVD's Classic Diagnostic Adapter](https://github.com/eclipse-opensovd/classic-diagnostic-adapter) (CDA) component.
 The CDA exposes an HTTP based API that can be used by clients to interact with ECUs via UDS over DoIP.
 
-The Powertrain ECU is represented by a modified version of the ECU Simulator component that is part of OpenSOVD's test infrastructure. In particular, it has been modified to expose a _PowerTrain_Mode_Read_ and a _PowerTrain_Mode_Write_ operation.
+The Powertrain ECU is represented by a modified version of the ECU Simulator component that is part of OpenSOVD's test infrastructure. In particular, it has been modified to expose _PowerTrain_Mode_Read_ and _PowerTrain_Mode_Write_ operations.
 
-The Fleet Management Service is started automatically by Docker Compose. The setting of the powertrain mode can be traced through the system by means of the container logs:
+Start the required components and services by running:
+
+```bash
+# Using the default Docker Compose file in the top level folder:
+docker compose --profile infra --profile powertrain up -d
+```
+
+The setting of the powertrain mode can be traced through the system by means of the container logs, which you can examine in the Dozzle console.
 
 * The log file of the Fleet Management System contains entries like these:
   ```log
@@ -147,6 +176,8 @@ The Fleet Management Service is started automatically by Docker Compose. The set
   Set PowerTrain Mode: 2
   09:13:25.536 DEBUG [DefaultDispatcher-worker-10] SimEcu blueprint-ecu Request for blueprint-ecu: '2E 4E 66 02' matched '{ PowerTrain_Mode_Write; Bytes: 2E 4E 66 [] }' -> Send response '6E 4E 66'
   ```
+
+The FMS, Powertrain Mode Controller and CDA components also log information about the JWTs that are created and validated at _DEBUG_ level.
 
 The sequence diagram below shows the flow of messages for setting the current mode on the powertrain ECU:
 

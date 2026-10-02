@@ -159,12 +159,12 @@
                         "datatype": "string[]",
                         "description": "Supported powertrain modes in the vehicle.",
                         "allowed": [
-                            "PERFORMANCE",
-                            "ECONOMY",
-                            "EV_ONLY",
-                            "FORCED_CHARGING"
+                            "Performance",
+                            "Economy",
+                            "EvOnly",
+                            "ForcedCharging"
                         ],
-                        "default": [ "PERFORMANCE", "ECONOMY" ]
+                        "default": [ "Performance", "Economy" ]
                     },
                     "FuelSystem": {
                         "type": "branch",
@@ -176,7 +176,7 @@
                                 "description": "High level information of fuel types supported by the vehicle.",
                                 "comment": "If a vehicle also has an electric drivetrain (e.g. hybrid) that will be obvious from the powertrain type.",
                                 "allowed": [
-                                    "GASOHLINE",
+                                    "GASOLINE",
                                     "DIESEL",
                                     "E85",
                                     "LPG",

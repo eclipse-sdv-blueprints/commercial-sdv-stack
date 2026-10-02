@@ -18,6 +18,17 @@ repository.workspace = true
 version.workspace = true
 edition.workspace = true
 
+[features]
+default = []
+powertrain = ["dep:serde", "dep:serde_json"]
+opa = ["dep:clap", "dep:regorus"]
+
 [dependencies]
-serde = { workspace = true }
-serde_json = { workspace = true }
+clap = { workspace = true, default-features = false, features = [
+    "std",
+    "derive",
+    "env",
+], optional = true }
+regorus = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }

@@ -29,14 +29,16 @@ clap = { workspace = true, default-features = false, features = [
     "error-context",
     "suggestions",
 ] }
-common = { workspace = true }
+common = { workspace = true, features = ["opa", "powertrain"] }
 env_logger = { workspace = true }
 log = { workspace = true }
-reqwest = { version = "0.13.4", features = ["json"] }
+regorus = { workspace = true }
+reqwest = { version = "0.13.5", features = ["json"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
+spiffe = { workspace = true, features = ["workload-api-jwt"] }
 tokio = { workspace = true, features = ["signal"] }
 up-rust = { workspace = true, default-features = false, features = ["communication"] }
 up-transport-mqtt5 = { workspace = true }
 up-transport-zenoh = { workspace = true }
-url = { version = "2.5.7" }
+url = { version = "2.5.8" }

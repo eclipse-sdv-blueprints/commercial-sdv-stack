@@ -74,8 +74,8 @@
                                     "name": "ecu-updater-type",
                                     "libFile": "/extensions/libuprotocol.so",
                                     "libHash": "any",
-                                    "localEntity": "up://symphony-agent/DA00/1/0",
-                                    "getMethodUri": "up://ecu-updater/1A100/1/1",
+                                    "localEntity": "up://vehicle/1DA00/1/0",
+                                    "getMethodUri": "up://vehicle/1A100/1/1",
                                     "brokerAddress": "mqtt://mosquitto:1883"
                                 }
                             }
