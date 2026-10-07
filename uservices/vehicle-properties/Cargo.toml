@@ -29,12 +29,12 @@ clap = { workspace = true, default-features = false, features = [
     "error-context",
     "suggestions",
 ] }
-clap-num = { workspace = true }
 env_logger = { workspace = true }
 http = { version = "1.4.1" }
 kuksa-rust-sdk = { version = "0.2.2" }
 log = { workspace = true }
 serde_json = { workspace = true }
+spiffe = { workspace = true, features = ["jwt-source"] }
 tokio = { workspace = true, features = ["signal"] }
 up-rust = { workspace = true, default-features = false, features = ["communication"] }
 up-transport-mqtt5 = { workspace = true }

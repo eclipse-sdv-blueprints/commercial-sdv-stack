@@ -1,0 +1,31 @@
+#
+# SPDX-FileCopyrightText: Copyright (c) 2026 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Apache License Version 2.0 which is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+# AI assistance: parts of this file were generated with Claude Code (Opus 4.8)
+# and GitHub Copilot (Claude Opus 5.5) and reviewed and verified by the human
+# contributor. All content is contributed under the Apache-2.0 license declared
+# above.
+#
+
+[package]
+name = "sdv-integration-tests"
+version = "0.1.0"
+edition = "2021"
+publish = false
+license = "Apache-2.0"
+
+# Standalone crate on purpose: it is NOT a member of the uservices workspace, so
+# it never drags in the musl/cross build. It drives the already-running stack.
+
+[dependencies]
+base64 = "0.22"
+serde_json = "1"

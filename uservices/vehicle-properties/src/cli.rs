@@ -15,6 +15,7 @@ use std::{str::FromStr, sync::Arc, time::Duration};
 
 use backon::{ExponentialBuilder, Retryable};
 use clap::Parser;
+use http::Uri;
 use log::info;
 use up_rust::{StaticUriProvider, UCode, UTransport, UUri};
 use up_transport_mqtt5::{Mqtt5TransportOptions, MqttClientOptions};
@@ -29,8 +30,8 @@ pub(crate) struct Cli {
     #[arg(
         long,
         value_name = "URI",
-        env = "LOCAL_ADDRESS",
-        default_value = "up://vehicle-properties/302/1/0",
+        env = "UP_LOCAL_ADDRESS",
+        default_value = "up://vehicle/10302/1/0",
         value_parser = up_rust::UUri::from_str,
     )]
     local_address: UUri,
@@ -39,9 +40,10 @@ pub(crate) struct Cli {
         long,
         value_name = "URI",
         env = "DATABROKER_URI",
-        default_value = "http://databroker:55555"
+        default_value = "http://databroker:55555",
+        value_parser = Uri::from_str,
     )]
-    databroker_uri: String,
+    databroker_uri: Uri,
     #[command(subcommand)]
     command: Commands,
 }
@@ -58,7 +60,7 @@ enum Commands {
 }
 
 impl Cli {
-    pub(crate) fn get_databroker_uri(&self) -> &str {
+    pub(crate) fn get_databroker_uri(&self) -> &Uri {
         &self.databroker_uri
     }
 
