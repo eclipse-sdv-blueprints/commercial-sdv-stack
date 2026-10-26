@@ -29,6 +29,11 @@ cargo tree --manifest-path uservices/Cargo.toml -e no-build,no-dev,no-proc-macro
   | grep -v fms \
   | grep -v powertrain \
   | grep -v vehicle-properties \
+  | grep -v cda- \
+  | grep -v mimalloc \
+  | grep -v opensovd- \
+  | grep -v override-macros \
+  | grep -v sovd-interfaces \
   | sed -E 's|([^ ]+) v([^ ]+).*|crate/cratesio/-/\1/\2|' \
   > "$deps_file"
 

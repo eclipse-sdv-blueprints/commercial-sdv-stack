@@ -33,12 +33,14 @@ clap = { workspace = true, default-features = false, features = [
     "error-context",
     "suggestions",
 ] }
-common = { workspace = true }
+common = { workspace = true, features = ["opa", "powertrain"] }
 env_logger = { workspace = true }
 log = { workspace = true }
+regorus = { workspace = true }
 reqwest = { version = "0.13.5", features = ["json"] }
 serde = { workspace = true }
 serde_json = { workspace = true }
+spiffe = { workspace = true, features = ["workload-api-jwt"] }
 tokio = { workspace = true, features = ["macros", "rt-multi-thread", "signal"] }
 up-rust = { workspace = true, default-features = false, features = ["communication"] }
 url = { version = "2.5.8" }
