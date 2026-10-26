@@ -11,6 +11,8 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+pub mod transport_commands;
+
 pub const RESOURCE_ID_GET_CURRENT_MODE: u16 = 0x0001;
 pub const RESOURCE_ID_SET_CURRENT_MODE: u16 = 0x0002;
 

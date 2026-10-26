@@ -11,14 +11,10 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
-use std::{str::FromStr, sync::Arc, time::Duration};
+use std::{str::FromStr, sync::Arc};
 
-use backon::{ExponentialBuilder, Retryable};
 use clap::Parser;
-use log::info;
-use up_rust::{StaticUriProvider, UCode, UTransport, UUri};
-use up_transport_mqtt5::{Mqtt5TransportOptions, MqttClientOptions};
-use up_transport_zenoh::{UPTransportZenoh, zenoh_config::Config};
+use up_rust::{StaticUriProvider, UTransport, UUri};
 
 #[derive(Parser)]
 #[command(version, about, long_about = None)]
@@ -76,18 +72,7 @@ pub(crate) struct Cli {
     )]
     sovd_access_token: String,
     #[command(subcommand)]
-    command: Commands,
-}
-
-#[derive(clap::Subcommand)]
-enum Commands {
-    /// Use Zenoh as transport
-    Zenoh,
-    /// Use MQTT 5 as transport
-    Mqtt5 {
-        #[command(flatten)]
-        options: Box<MqttClientOptions>,
-    },
+    command: common::transport_commands::Commands,
 }
 
 impl Cli {
@@ -115,48 +100,8 @@ impl Cli {
     pub(crate) async fn get_transport(
         self,
     ) -> Result<Arc<dyn UTransport>, Box<dyn std::error::Error>> {
-        match self.command {
-            Commands::Zenoh => {
-                info!("Using default Zenoh transport");
-                let transport = UPTransportZenoh::builder(self.local_address.authority_name())?
-                    .with_config(Config::default())
-                    .build()
-                    .await
-                    .map(Arc::new)?;
-                Ok(transport)
-            }
-            Commands::Mqtt5 { options } => {
-                info!(
-                    "Using MQTT 5 transport with broker URI: {}",
-                    options.broker_uri
-                );
-                let transport_options = Mqtt5TransportOptions {
-                    mqtt_client_options: *options,
-                    mode: up_transport_mqtt5::TransportMode::InVehicle,
-                    ..Default::default()
-                };
-                let transport = up_transport_mqtt5::Mqtt5Transport::new(
-                    transport_options,
-                    self.local_address.authority_name(),
-                )
-                .await
-                .map(Arc::new)?;
-                (|| transport.connect())
-                    .retry(
-                        ExponentialBuilder::default().with_total_delay(Some(Duration::from_secs(10))),
-                    )
-                    .notify(|error, sleep_duration| {
-                        info!("Attempt to connect to MQTT broker failed [error: {error}], retrying in {sleep_duration:?}");
-                    })
-                    .when(|err| {
-                        // no need to keep retrying if authentication or permission is denied
-                        err.get_code() != UCode::UNAUTHENTICATED
-                            && err.get_code() != UCode::PERMISSION_DENIED
-                    })
-                    .await?;
-                info!("Connected to MQTT5 broker");
-                Ok(transport)
-            }
-        }
+        self.command
+            .get_transport(self.local_address.authority_name())
+            .await
     }
 }

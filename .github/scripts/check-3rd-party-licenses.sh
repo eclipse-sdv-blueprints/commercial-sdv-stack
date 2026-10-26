@@ -21,7 +21,7 @@ project=${PROJECT:-"automotive.sdv-blueprints"}
 token=$1
 
 echo "Creating list of 3rd party crates we depend on..."
-cargo tree --manifest-path uservices/Cargo.toml -e no-build,no-dev --prefix none --no-dedupe --locked \
+cargo tree --manifest-path uservices/Cargo.toml -e no-build,no-dev,no-proc-macro --prefix none --no-dedupe --locked \
   | sed -n '2~1p' \
   | sort -u \
   | grep -v '^[[:space:]]*$' \
@@ -29,7 +29,6 @@ cargo tree --manifest-path uservices/Cargo.toml -e no-build,no-dev --prefix none
   | grep -v fms \
   | grep -v powertrain \
   | grep -v vehicle-properties \
-  | grep -v up- \
   | sed -E 's|([^ ]+) v([^ ]+).*|crate/cratesio/-/\1/\2|' \
   > "$deps_file"
 

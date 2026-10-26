@@ -11,6 +11,7 @@
  * SPDX-License-Identifier: Apache-2.0
  ********************************************************************************/
 
+use http::Uri;
 use kuksa_rust_sdk::kuksa::common::ClientTraitV2;
 use kuksa_rust_sdk::kuksa::val::v2::KuksaClientV2;
 use kuksa_rust_sdk::v2_proto::Datapoint;
@@ -30,9 +31,8 @@ pub(crate) struct DatabrokerAdapter {
 }
 
 impl DatabrokerAdapter {
-    pub async fn new(url: &str) -> Result<Self, Box<dyn std::error::Error>> {
-        let uri = http::Uri::try_from(url)?;
-        let client = KuksaClientV2::new(uri);
+    pub async fn new(uri: &Uri) -> Result<Self, Box<dyn std::error::Error>> {
+        let client = KuksaClientV2::new(uri.clone());
         Ok(Self { client })
     }
 

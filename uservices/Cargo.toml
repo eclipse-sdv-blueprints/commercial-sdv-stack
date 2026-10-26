@@ -22,9 +22,9 @@ resolver = "2"
 
 [workspace.package]
 readme = "README.md"
-repository = "git@github.com:eclipse-sdv-blueprints/commercial-sdv-stack"
-version = "0.1.0-SNAPSHOT"
+repository = "https://github.com/eclipse-sdv-blueprints/commercial-sdv-stack/"
 edition = "2024"
+publish = false
 
 [workspace.dependencies]
 async-trait = { version = "0.1.89" }
@@ -39,11 +39,11 @@ log = { version = "0.4.30" }
 protobuf = { version = "3.7.2" }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = { version = "1.0.150" }
-# tokio does not enable features by default
-tokio = { version = "1.52.3" }
+tokio = { version = "1.53.1", default-features = false }
 up-rust = { version = "0.9", default-features = false }
 up-transport-mqtt5 = { version = "0.4" }
-up-transport-zenoh = { version = "0.9" }
+up-transport-zenoh = { version = "0.9.1" }
+zenoh = { version = "1.10.1", default-features = false, features = ["auth_usrpwd", "transport_tcp", "transport_tls"] }
 
 [profile.release]
 lto = true          # Link time optimization (dead code removal etc...)

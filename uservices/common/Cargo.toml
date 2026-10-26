@@ -13,11 +13,30 @@
 
 [package]
 name = "common"
-readme.workspace = true
-repository.workspace = true
-version.workspace = true
-edition.workspace = true
+publish = { workspace = true }
+edition = { workspace = true }
+
+[features]
+default = []
+mqtt5 = [ "dep:up-transport-mqtt5" ]
+zenoh = [ "dep:up-transport-zenoh", "dep:zenoh" ]
 
 [dependencies]
+backon = { workspace = true }
+clap = { workspace = true, features = [
+    "std",
+    "derive",
+    "env",
+    "color",
+    "help",
+    "usage",
+    "error-context",
+    "suggestions",
+] }
+log = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+up-rust = { workspace = true }
+up-transport-mqtt5 = { workspace = true, optional = true }
+up-transport-zenoh = { workspace = true, optional = true }
+zenoh = { workspace = true, optional = true }
