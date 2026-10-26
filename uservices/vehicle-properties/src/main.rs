@@ -14,7 +14,8 @@
 use std::time::Duration;
 
 use clap::Parser;
-use log::{info, warn};
+use log::{debug, info, warn};
+use spiffe::JwtSource;
 use up_rust::communication::{CallOptions, Publisher, SimplePublisher, UPayload};
 
 mod cli;
@@ -31,9 +32,26 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
     let cli = cli::Cli::parse();
 
+    let jwt_source = JwtSource::new().await?;
     let mut adapter = databroker_client::DatabrokerAdapter::new(cli.get_databroker_uri()).await?;
     let publisher = get_publisher(cli).await?;
     loop {
+        // Fetch JWT SVID for accessing Databroker
+        if let Err(e) = jwt_source
+            .fetch_jwt_svid(&["kuksa.val"])
+            .await
+            .map_err(Box::<dyn std::error::Error>::from)
+            .inspect(|svid| {
+                debug!(
+                    "Successfully retrieved SVID for accessing Kuksa Databroker: {:?}",
+                    svid
+                )
+            })
+            .and_then(|svid| adapter.set_token(svid.token()))
+        {
+            warn!("Failed to update JWT for accessing Kuksa Databroker: {e}");
+            continue;
+        }
         match adapter.get_vehicle_attributes().await {
             Ok(attributes) => {
                 if let Ok(data) = serde_json::to_vec(&attributes) {
@@ -47,19 +65,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         )
                         .await
                     {
-                        warn!("Failed to publish vehicle attributes: {:?}", e);
+                        warn!("Failed to publish vehicle attributes: {e}");
                     } else {
-                        info!("Published vehicle attributes: {:?}", attributes);
+                        info!("Published vehicle attributes: {}", attributes);
                     }
                 } else {
                     warn!(
-                        "Failed to serialize vehicle attributes to JSON: {:?}",
+                        "Failed to serialize vehicle attributes to JSON: {}",
                         attributes
                     );
                 }
             }
             Err(e) => {
-                warn!("Failed to get vehicle attributes: {:?}, retrying...", e);
+                warn!("Failed to retrieve vehicle attributes from Databroker: {e}");
             }
         }
         tokio::time::sleep(Duration::from_secs(5)).await;

@@ -36,6 +36,13 @@ impl DatabrokerAdapter {
         Ok(Self { client })
     }
 
+    pub fn set_token(&mut self, jwt: &str) -> Result<(), Box<dyn std::error::Error>> {
+        self.client
+            .basic_client
+            .set_access_token(jwt)
+            .map_err(Box::from)
+    }
+
     fn get_string_value(datapoints: &[Datapoint], idx: usize) -> Option<Value> {
         datapoints
             .get(idx)

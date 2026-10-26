@@ -26,8 +26,8 @@ pub(crate) struct Cli {
     #[arg(
         long,
         value_name = "URI",
-        env = "LOCAL_ADDRESS",
-        default_value = "up://vehicle-properties/302/1/0",
+        env = "UP_LOCAL_ADDRESS",
+        default_value = "up://vehicle/10302/1/0",
         value_parser = up_rust::UUri::from_str,
     )]
     local_address: UUri,

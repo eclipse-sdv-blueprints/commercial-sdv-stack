@@ -1,0 +1,5 @@
+{
+    "allowed_services": {
+        "spiffe://sdv.eclipse.org/vehicle/powertrain-mode-controller": [ "Powertrain_Mode_Read", "Powertrain_Mode_Write" ]
+    }
+}

@@ -1,0 +1,5 @@
+{
+    "allowed_method_ids": {
+        "spiffe://sdv.eclipse.org/backend/fms": [ 1, 2 ]
+    }
+}

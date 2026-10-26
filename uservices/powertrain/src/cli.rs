@@ -25,8 +25,8 @@ pub(crate) struct Cli {
     #[arg(
         long,
         value_name = "URI",
-        env = "LOCAL_ADDRESS",
-        default_value = "up://powertrain-mode-controller/301/1/0",
+        env = "UP_LOCAL_ADDRESS",
+        default_value = "up://vehicle/10301/1/0",
         value_parser = up_rust::UUri::from_str,
     )]
     local_address: UUri,
@@ -64,13 +64,8 @@ pub(crate) struct Cli {
         }
     )]
     sovd_powertrain_mode_resource_path: String,
-    #[arg(
-        long,
-        value_name = "ACCES_TOKEN",
-        env = "SOVD_ACCESS_TOKEN",
-        default_value = ""
-    )]
-    sovd_access_token: String,
+    #[command(flatten)]
+    pub opa_config: common::open_policy_agent::OpaConfig,
     #[command(subcommand)]
     command: common::transport_commands::Commands,
 }
@@ -85,10 +80,6 @@ impl Cli {
     ) -> Result<url::Url, url::ParseError> {
         self.sovd_server_base_uri
             .join(&self.sovd_powertrain_mode_resource_path)
-    }
-
-    pub(crate) fn get_sovd_access_token(&self) -> &str {
-        &self.sovd_access_token
     }
 
     pub(crate) fn get_local_uri_provider(
