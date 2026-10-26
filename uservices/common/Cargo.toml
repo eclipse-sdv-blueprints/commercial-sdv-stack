@@ -20,22 +20,20 @@ edition = { workspace = true }
 default = []
 mqtt5 = [ "dep:up-transport-mqtt5" ]
 zenoh = [ "dep:up-transport-zenoh", "dep:zenoh" ]
+powertrain = ["dep:serde", "dep:serde_json"]
+opa = ["dep:clap", "dep:regorus"]
 
 [dependencies]
 backon = { workspace = true }
-clap = { workspace = true, features = [
+clap = { workspace = true, default-features = false, features = [
     "std",
     "derive",
     "env",
-    "color",
-    "help",
-    "usage",
-    "error-context",
-    "suggestions",
-] }
+], optional = true }
+regorus = { workspace = true, optional = true }
 log = { workspace = true }
-serde = { workspace = true }
-serde_json = { workspace = true }
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
 up-rust = { workspace = true }
 up-transport-mqtt5 = { workspace = true, optional = true }
 up-transport-zenoh = { workspace = true, optional = true }

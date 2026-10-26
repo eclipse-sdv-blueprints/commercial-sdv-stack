@@ -33,10 +33,11 @@ clap = { workspace = true, default-features = false, features = [
     "error-context",
     "suggestions",
 ] }
-common = { workspace = true }
+common = { workspace = true, features = ["powertrain"] }
 env_logger = { workspace = true }
 log = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
-tokio = { workspace = true, features = ["macros", "rt-multi-thread", "signal"] }
+spiffe = { workspace = true, features = ["jwt-source"] }
+tokio = { workspace = true, features = ["signal"] }
 up-rust = { workspace = true, default-features = false, features = ["communication"] }
