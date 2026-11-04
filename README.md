@@ -66,12 +66,7 @@ No physical ECU, Kubernetes cluster, local Rust toolchain or local JVM is needed
 
 Use a trusted development host only. The stack uses demo credentials, an unsecured (non-TLS) connection to the Kuksa Databroker, and Dozzle as well as the Spire agents mount the host's Docker socket. Do not deploy the configuration unchanged on a public server or in a production vehicle.
 
-Most published ports are bound to `127.0.0.1`, but the CDA and ECU Simulator control ports bind to all host interfaces by default. To keep these diagnostic APIs local, set the following variables in the shell that you run the Docker Compose commands from:
-
-```bash
-export CDA_PORT=127.0.0.1:20002
-export SIM_CONTROL_PORT=127.0.0.1:8181
-```
+All ports listed under [Host Ports](#host-ports) are bound to the loopback interface (`127.0.0.1`) only. The host address and port of the CDA and ECU Simulator control APIs can be changed using the `CDA_PORT` and `SIM_CONTROL_PORT` environment variables, see [A Port Is Already in Use](#a-port-is-already-in-use). Review firewall rules and access controls before binding any service to other interfaces.
 
 ## Getting Started
 

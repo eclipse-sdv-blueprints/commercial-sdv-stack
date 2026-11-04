@@ -339,7 +339,7 @@ services:
         # the SHA of the git ref we use in uservices/cda/Cargo.toml
         - SOURCE_GIT_SHA=99c60782a6e25f6cff9ba3a3418d0750f936016e
     ports:
-      - "${CDA_PORT:-20002}:20002"
+      - "${CDA_PORT:-127.0.0.1:20002}:20002"
     volumes:
       - ./config/cda/config:/app/config:ro
       - ./config/cda/odx:/app/odx:ro
@@ -370,7 +370,7 @@ services:
       context: ./ecu-sim
       dockerfile: docker/Dockerfile
     ports:
-      - "${SIM_CONTROL_PORT:-8181}:8181"
+      - "${SIM_CONTROL_PORT:-127.0.0.1:8181}:8181"
     networks:
       - vehicle-sovd
     healthcheck:
