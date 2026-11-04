@@ -7,16 +7,71 @@ Use cases currently include:
 * Over-the-Air (OTA) firmware updates of ECUs
 * OTA configuration changes of ECUs
 
-## Documentation
-
-Start with the [Commercial SDV Stack guide](docs/website/introduction.md) for prerequisites, setup, architecture, step-by-step use cases, and troubleshooting.
-Maintainers can follow the [website integration guide](docs/WEBSITE_INTEGRATION.md) to publish these pages on the Eclipse SDV Blueprints website.
-
 ## Top Level View
 
 The following diagram provides an overview of the components used for the example use cases and their relationship to each other:
 
 ![Top-Level View](./Top%20Level%20View.drawio.svg)
+
+### Services and Networks
+
+The [Docker Compose file](docker-compose.yaml) runs the backend and a simulated vehicle on a single host. Services are grouped into profiles, which are selected using the `--profile` option:
+
+| Compose service | Profiles | Networks | Responsibility |
+| :-------------- | :------- | :------- | :------------- |
+| `dozzle` | `infra` | default | Displays container logs in a browser |
+| `spire-server` | `infra`, `fw-update`, `powertrain` | `backend` | Provides the key material for creating and verifying JWTs |
+| `spire-agent-backend` | `infra`, `fw-update`, `powertrain` | `backend` | Issues JWTs to backend workloads via the SPIFFE Workload API |
+| `spire-agent-vehicle` | `infra`, `fw-update`, `powertrain` | `backend` | Issues JWTs to in-vehicle workloads via the SPIFFE Workload API |
+| `mosquitto` | `infra`, `fw-update`, `powertrain` | `backend`, `vehicle-uprotocol` | Carries Symphony messages and uProtocol communication using MQTT |
+| `symphony-api` | `fw-update` | `backend` | Accepts deployment target specifications in the backend |
+| `symphony-portal` | `fw-update` | `backend` | Provides a read-only view of Symphony targets and deployment progress |
+| `symphony-agent` | `fw-update` | `vehicle-uprotocol` | Reconciles the desired deployment state with the in-vehicle target provider |
+| `ecu-updater` | `fw-update` | `vehicle-uprotocol` | Implements the Symphony target provider operations over uProtocol; keeps firmware deployment state in memory |
+| `fms` | `powertrain` | `backend` | Represents the Fleet Management System; sets powertrain modes and logs vehicle properties events |
+| `databroker` | `powertrain` | `vehicle-uprotocol` | Hosts vehicle information using Eclipse Kuksa and VSS metadata |
+| `vehicle-properties` | `powertrain` | `vehicle-uprotocol` | Makes vehicle properties from the Databroker available as uProtocol events |
+| `powertrain-mode-controller` | `powertrain` | `vehicle-uprotocol`, `vehicle-sovd` | Exposes uProtocol operations for reading and setting the powertrain mode via SOVD |
+| `sovd-cda` | `powertrain` | `vehicle-sovd` | Maps SOVD resources to UDS operations using preprocessed diagnostic definitions |
+| `ecu-sim` | `powertrain` | `vehicle-sovd` | Simulates a DoIP-connected ECU, including powertrain mode read/write operations |
+
+The networks model logical boundaries between backend communication, in-vehicle uProtocol services and vehicle diagnostics. They do not represent a production vehicle security architecture.
+
+### Host Ports
+
+| Service | Default host address | Notes |
+| :------ | :------------------- | :---- |
+| Dozzle | http://localhost:8080 | Container list and live logs |
+| Symphony API | http://localhost:8082/v1alpha2/greetings | Returns `Hello from Symphony K8s control plane (S8C)` |
+| Symphony Portal | http://localhost:3000 | Log in as `admin` with an empty password |
+| SOVD API (CDA) | http://localhost:20002/vehicle/v15 | Host port configurable via `CDA_PORT` |
+| ECU Simulator control API | http://localhost:8181 | Host port configurable via `SIM_CONTROL_PORT` |
+| Kuksa Databroker | `localhost:55555` | gRPC endpoint, not a browser UI |
+| MQTT broker | `localhost:1883` | MQTT endpoint, not a browser UI |
+
+When using a remote development host or dev container, `localhost` refers to the machine running Docker. Forward the required ports to the machine running your browser instead of making the demo endpoints publicly accessible.
+Host names like `sovd-cda` or `mosquitto` can only be resolved from within the Compose networks.
+
+## Prerequisites
+
+- A development machine with Docker Engine or Docker Desktop running and Docker Compose v2 installed.
+- Git to clone the repository.
+- Bash, `curl` and `jq` to run the scripts and example requests.
+- A browser for Dozzle and the Symphony Portal.
+- Internet access to the GitHub Container Registry (`ghcr.io`) and Docker Hub for pulling container images.
+
+No physical ECU, Kubernetes cluster, local Rust toolchain or local JVM is needed when using the published container images.
+
+### Security Notes
+
+Use a trusted development host only. The stack uses demo credentials, an unsecured (non-TLS) connection to the Kuksa Databroker, and Dozzle as well as the Spire agents mount the host's Docker socket. Do not deploy the configuration unchanged on a public server or in a production vehicle.
+
+Most published ports are bound to `127.0.0.1`, but the CDA and ECU Simulator control ports bind to all host interfaces by default. To keep these diagnostic APIs local, set the following variables in the shell that you run the Docker Compose commands from:
+
+```bash
+export CDA_PORT=127.0.0.1:20002
+export SIM_CONTROL_PORT=127.0.0.1:8181
+```
 
 ## Getting Started
 
@@ -63,6 +118,13 @@ In the Dozzle console you should now see a few additional containers running.
   During your experiments, the portal can used to determine the progress of updates by means of checking the _Targets_.
 
 ### Trigger Firmware Update
+
+* The firmware components to deploy are described in the [target specification](scripts/target.json).
+* Optionally, follow the vehicle-side logs in a second terminal (Dozzle is an alternative log viewer):
+
+  ```bash
+  docker compose --profile infra --profile fw-update logs --follow --tail=50 symphony-agent ecu-updater
+  ```
 
 Now that the infrastructure is up and running, it is time to trigger the update of some ECU firmware images using the Symphony API:
 
@@ -147,6 +209,24 @@ sequenceDiagram
 
 **Note** The ECU Updater in this example use case does not actually deploy any firmware images to any ECU but only maintains some state in memory. In a future extension of the blueprint, the OpenSOVD CDA server might be used to actually perform an ECU update via UDS.
 
+### Clean Up an Interrupted Run
+
+If the script was stopped before it removed the target (e.g. using Ctrl+C), the `ecu-updater-target` remains registered in Symphony. Remove it manually before running the script again:
+
+```bash
+SYMPHONY_BASE_URL=http://localhost:8082/v1alpha2
+SYMPHONY_TOKEN=$(curl --fail-with-body -sS -X POST \
+  -H 'Content-Type: application/json' \
+  --data '{"username":"admin","password":""}' \
+  "$SYMPHONY_BASE_URL/users/auth" | jq -er '.accessToken')
+
+curl --fail-with-body -sS -X DELETE \
+  -H "Authorization: Bearer $SYMPHONY_TOKEN" \
+  "$SYMPHONY_BASE_URL/targets/registry/ecu-updater-target"
+```
+
+Wait for the target to disappear from the Symphony Portal before retrying.
+
 ## Run the Set Powertrain Mode Use Case
 
 In this use case, a Fleet Management System in the backend uses the _Powertrain Mode Controller_ uService on the vehicle to cycle the vehicle's powertrain through all supported modes.
@@ -183,6 +263,20 @@ The setting of the powertrain mode can be traced through the system by means of 
   ```
 
 The FMS, Powertrain Mode Controller and CDA components also log information about the JWTs that are created and validated at _DEBUG_ level.
+
+Some more hints for following the use case:
+
+* To follow the complete chain in a terminal instead of Dozzle, run:
+  ```bash
+  docker compose --profile infra --profile powertrain logs --follow --tail=100 fms powertrain-mode-controller sovd-cda ecu-sim
+  ```
+* The FMS waits five seconds after each completed RPC before requesting the next mode change. The changes continue until the FMS or the stack is stopped.
+* A log entry of the FMS only shows which mode has been requested. Check the ECU Simulator's log for the corresponding `PowerTrain_Mode_Write` request to verify that the change has reached the ECU.
+* Pause the FMS before manually experimenting with the ECU, so that it does not overwrite your changes, and resume it afterwards:
+  ```bash
+  docker compose --profile infra --profile powertrain stop fms
+  docker compose --profile infra --profile powertrain start fms
+  ```
 
 The sequence diagram below shows the flow of messages for setting the current mode on the powertrain ECU:
 
@@ -255,3 +349,88 @@ curl -s -X PUT -H "Authorization: Bearer $ACCESS_TOKEN" -H "Content-Type: applic
 curl -s -X PUT -H "Content-Type: application/json" --data '{"variant": "BOOT"}' "http://localhost:8181/blueprint-ecu/state"
 
 ```
+
+## Stop and Clean Up
+
+If you are running the firmware update use case, finish the script by pressing _Enter_ so that it removes its target. Then stop all components:
+
+```bash
+docker compose --profile infra --profile fw-update --profile powertrain down
+```
+
+This keeps the named volumes (Mosquitto data and logs, Spire agent sockets). To start from a completely fresh environment, also delete these volumes and their contents:
+
+```bash
+docker compose --profile infra --profile fw-update --profile powertrain down --volumes
+```
+
+Neither command deletes any repository files. Note that the ECU Updater's deployment state and the Spire server's workload registrations are not persisted. After the containers have been recreated, run `scripts/register_workloads.sh` again.
+
+## Troubleshooting
+
+Run all commands from the repository root folder. If you have set the `CDA_PORT` and `SIM_CONTROL_PORT` variables, keep them set for all Docker Compose commands.
+
+### Check Container Status and Logs
+
+```bash
+docker compose --profile infra --profile fw-update --profile powertrain ps --all
+docker compose --profile infra --profile fw-update --profile powertrain logs --tail=100
+```
+
+Look for exited containers, an unhealthy ECU Simulator or MQTT broker, and repeated connection or authentication errors. The MQTT broker and ECU Simulator have health checks, but a running container alone does not prove that all downstream APIs are ready yet. Transient RPC failures right after startup are therefore normal.
+
+### Docker Is Not Reachable
+
+If `docker version` does not report a server version, start Docker Engine or Docker Desktop and make sure that your user can access the Docker socket. Do not make the socket world-writable to work around access errors.
+
+### Container Images Cannot Be Pulled
+
+Check registry access, your network connection and whether the published images support your host's architecture:
+
+```bash
+docker compose --profile infra --profile fw-update --profile powertrain pull
+```
+
+Alternatively, the images of the blueprint's own components can be built locally, see [uServices](uservices/README.md#building).
+
+### A Port Is Already in Use
+
+Stop the conflicting local service or change the host port mapping. The CDA and ECU Simulator host ports can be configured using environment variables:
+
+```bash
+export CDA_PORT=127.0.0.1:20003
+export SIM_CONTROL_PORT=127.0.0.1:8182
+docker compose --profile infra --profile powertrain up -d
+```
+
+In this example, use http://localhost:20003/vehicle/v15 and http://localhost:8182 from the host. The service addresses within the Compose networks remain unchanged. Changing other host ports requires changes to the Compose file.
+
+### Firmware Target Does Not Reach the ECU Updater
+
+Make sure that the Symphony greeting works and that the target shows up in the Symphony Portal. Then inspect the orchestration chain:
+
+```bash
+docker compose --profile infra --profile fw-update logs --tail=150 symphony-api symphony-agent ecu-updater mosquitto
+```
+
+Check that the Symphony Agent and the ECU Updater are connected to the MQTT broker. Note that the trigger script does not check the HTTP responses of the Symphony API, so the _Press Enter_ prompt also appears if a request has failed. Review the script's output, and check that `jq` is installed and that authentication returned a token.
+
+Only one run of the script should manage the `ecu-updater-target` at a time. Remove a stale target before retrying, see [Clean Up an Interrupted Run](#clean-up-an-interrupted-run).
+
+### Powertrain Modes Do Not Change
+
+```bash
+docker compose --profile infra --profile powertrain logs --tail=150 fms powertrain-mode-controller sovd-cda ecu-sim mosquitto
+```
+
+Check the chain in order: the FMS requests, uProtocol/MQTT connectivity, the controller's SOVD destination, the CDA responses and the simulator's UDS requests. If you have paused the FMS before, resume it using `docker compose --profile infra --profile powertrain start fms`.
+
+If you have changed the ECU's lock, session or variant (see [Example Requests](#example-requests)), go back to the baseline by recreating the simulator and the CDA. This interrupts active diagnostic connections:
+
+```bash
+docker compose --profile infra --profile powertrain up -d --force-recreate ecu-sim sovd-cda
+```
+
+### Report an Issue
+
+Open an [issue](https://github.com/eclipse-sdv-blueprints/commercial-sdv-stack/issues) and include your host OS and architecture, the Docker and Compose versions, the failing step, the container status and relevant log excerpts. Remove tokens, credentials and sensitive vehicle data before sharing any output.

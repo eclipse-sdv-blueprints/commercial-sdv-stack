@@ -21,3 +21,7 @@ cd odx
 java -jar <path-to-odx-converter>/converter/build/libs/converter-all.jar blueprint-ecu.pdx
 cd ..
 ```
+
+Regenerating the diagnostic data is not required for running the use cases, because the repository already contains the preprocessed MDD file. The Docker Compose file mounts it from [config/cda/odx/blueprint-ecu.mdd](../config/cda/odx/blueprint-ecu.mdd) into the `sovd-cda` container. To use a regenerated file, copy the converted `blueprint-ecu.mdd` to the `config/cda/odx/` folder and recreate the `sovd-cda` container.
+
+The generated service definitions include the `PowerTrain_Mode_Read` and `PowerTrain_Mode_Write` operations, which are implemented by the corresponding [ECU simulation](../ecu-sim/).
